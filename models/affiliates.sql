@@ -90,7 +90,7 @@ trans AS (SELECT userid, SUM (amounteur) AS deposits, CAST (transactioncompleted
 SELECT joins.userid,
        joins.date,
        User.username,  
-       User.affiliatemarker AS afffiliatecode,
+       User.affiliatemarker AS affiliatecode,
        User.registrationdate AS registrationdate, 
        IFNULL(trans.deposits, 0) AS deposit, 
        IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) AS bets,
