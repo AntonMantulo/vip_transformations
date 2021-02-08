@@ -2,35 +2,35 @@ WITH joins AS (
 
 WITH rmb AS (SELECT userid,CAST(endtime AS DATE) AS endtime, SUM(amounteur) as rmb_eur
               FROM vip.BetActivity
-              WHERE EXTRACT( MONTH from endtime)=2
-                 AND EXTRACT( YEAR from endtime)=2021
+              WHERE EXTRACT( MONTH from endtime)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from endtime)= EXTRACT (YEAR from CURRENT_DATE())
               AND wallettype = 'RealCash'
               GROUP BY userid,endtime),
               
 
 bmb as(SELECT userid,SUM(amounteur) as bmb_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bmb
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
+             FROM {{ref ('bmb') }}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
               GROUP BY userid,postingcompleted), 
               
 rmw as(SELECT userid,SUM(amounteur) as rmw_eur,CAST(endtime AS DATE) AS endtime
               FROM vip.WinActivity
-              WHERE EXTRACT( MONTH from endtime)=2
-                 AND EXTRACT( YEAR from endtime)=2021
+              WHERE EXTRACT( MONTH from endtime)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from endtime)= EXTRACT (YEAR from CURRENT_DATE())
               AND wallettype = 'RealCash'
               GROUP BY userid,endtime),
               
 bmw as(SELECT userid,SUM(amounteur) as bmw_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bmw
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
+             FROM {{ ref ('bmw') }}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
               GROUP BY userid,postingcompleted),              
               
 bc as (SELECT userid,SUM(amounteur) as bc_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bonus_costs
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
+             FROM {{ref ('bonus_costs')}}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
               GROUP BY userid,postingcompleted)
                                           
 SELECT rmb.userid, rmb.endtime AS date
@@ -50,40 +50,50 @@ FROM bc),
 
 rmb AS (SELECT userid,CAST(endtime AS DATE) AS endtime, SUM(amounteur) as rmb_eur
               FROM vip.BetActivity
-              WHERE EXTRACT( MONTH from endtime)=2
-                 AND EXTRACT( YEAR from endtime)=2021
+              WHERE EXTRACT( MONTH from endtime)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from endtime)= EXTRACT (YEAR from CURRENT_DATE())
               AND wallettype = 'RealCash'
               GROUP BY userid,endtime),
               
 bmb as(SELECT userid,SUM(amounteur) as bmb_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bmb
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
+             FROM {{ ref ('bmb')}}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
               GROUP BY userid,postingcompleted), 
 
 rmw as(SELECT userid,SUM(amounteur) as rmw_eur,CAST(endtime AS DATE) AS endtime
               FROM vip.WinActivity
-              WHERE EXTRACT( MONTH from endtime)=2
-                 AND EXTRACT( YEAR from endtime)=2021
+              WHERE EXTRACT( MONTH from endtime)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from endtime)= EXTRACT (YEAR from CURRENT_DATE())
               AND wallettype = 'RealCash'
               GROUP BY userid,endtime),
               
 bmw as(SELECT userid,SUM(amounteur) as bmw_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bmw
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
+             FROM {{ ref ('bmw')}}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
               GROUP BY userid,postingcompleted),              
               
 bc as (SELECT userid,SUM(amounteur) as bc_eur,CAST(postingcompleted AS DATE) AS postingcompleted
-             FROM dbt_vip.bonus_costs
-             WHERE EXTRACT( MONTH from postingcompleted)=2
-                 AND EXTRACT( YEAR from postingcompleted)=2021
-              GROUP BY userid,postingcompleted)
+             FROM {{ ref ('bonus_costs')}}
+             WHERE EXTRACT( MONTH from postingcompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from postingcompleted)= EXTRACT (YEAR from CURRENT_DATE())
+              GROUP BY userid,postingcompleted), 
+
+trans AS (SELECT userid, SUM (amounteur) AS deposits, CAST (transactioncompleted AS DATE) AS transactioncompleted
+            FROM {{ ref ('transactions')}} WHERE transactiontype = 'Deposit' 
+                  AND EXTRACT( MONTH from transactioncompleted)= EXTRACT (MONTH from CURRENT_DATE())
+                 AND EXTRACT( YEAR from transactioncompleted)= EXTRACT (YEAR from CURRENT_DATE())
+                 GROUP BY userid, transactioncompleted)
                                                
+                                          
 SELECT joins.userid,
-       joins.date, 
-       User.affiliatemarker,
-       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) AS turnover,
+       joins.date,
+       User.username,  
+       User.affiliatemarker AS afffiliatecode,
+       User.registrationdate AS registrationdate, 
+       IFNULL(trans.deposits, 0) AS deposit, 
+       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) AS bets,
        IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) AS ggr,
        IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) - IFNULL(bc_eur, 0) AS ngr       
 FROM joins 
@@ -99,4 +109,6 @@ FULL JOIN bc
 ON bc.userid = joins.userid AND bc.postingcompleted = joins.date
 LEFT JOIN vip.User 
 ON joins.userid=User.userid
+LEFT JOIN trans
+ON joins.userid = trans.userid AND joins.date = trans.transactioncompleted 
 ORDER BY joins.date ASC 
