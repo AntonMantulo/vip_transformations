@@ -1,4 +1,4 @@
-WITH joins AS (
+WITH master2 AS (WITH master AS(WITH joins AS (
 
 WITH rmb AS (SELECT userid,CAST(endtime AS DATE) AS endtime, SUM(amounteur) as rmb_eur
               FROM vip.BetActivity
@@ -110,5 +110,39 @@ ON bc.userid = joins.userid AND bc.postingcompleted = joins.date
 LEFT JOIN vip.User 
 ON joins.userid=User.userid
 LEFT JOIN trans
-ON joins.userid = trans.userid AND joins.date = trans.transactioncompleted 
-ORDER BY joins.date ASC 
+ON joins.userid = trans.userid AND joins.date = trans.transactioncompleted
+ORDER BY joins.date ASC) 
+SELECT userid, 
+   date,
+   username,
+   affiliatecode,
+   primary_aff,
+   secondary_aff, 
+   registrationdate,
+   deposit,
+   bets,
+   ggr,
+   ngr,
+   primary_commission,
+   secondary_commission
+FROM master
+LEFT JOIN `dbt_vip.Affiliates cardinality`  AS t
+ON LEFT(master.affiliatecode, 7) = t.secondary_aff)
+SELECT userid, 
+   date,
+   username,
+   affiliatecode,
+   CASE 
+      WHEN primary_aff IS NULL 
+      THEN ""
+      ELSE primary_aff
+   END AS primary_aff,
+   secondary_aff, 
+   registrationdate,
+   deposit,
+   bets,
+   ggr,
+   ngr,
+   primary_commission,
+   secondary_commission
+FROM master2
