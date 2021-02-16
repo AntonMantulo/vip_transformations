@@ -1,4 +1,4 @@
-WITH s AS (WITH asd AS(SELECT CAST(TRIM(RIGHT(note, 13)) AS INT64) AS bonuswalletid,
+WITH master AS (WITH s AS (WITH asd AS(SELECT CAST(TRIM(RIGHT(note, 13)) AS INT64) AS bonuswalletid,
       CASE 
         WHEN LENGTH(TRIM(RIGHT(note, 13))) = 12
         THEN CAST(LEFT(TRIM(RIGHT(note, 13)), 7) AS INT64)
@@ -96,4 +96,24 @@ SELECT userid,
   postingcompleted4 AS postingcompleted
 FROM w
 LEFT JOIN x
-ON w.bonuswalletid = x.bonuswalletid
+ON w.bonuswalletid = x.bonuswalletid), 
+bw AS(SELECT userid, gamecode, bonuswalletid, ROW_NUMBER () OVER (PARTITION BY bonuswalletid) AS rn
+      FROM vip.BetActivity)
+
+SELECT m.userid, 
+       m.bonuswalletid, 
+       m.bonus_status, 
+       m.amount, 
+       m.eurexchangerate, 
+       m.amounteur, 
+       m.postingcompleted,
+       CASE 
+        WHEN b.gamecode = 'OddsMatrix2'
+        THEN 'sport'
+        ELSE 'casino'
+       END AS type
+FROM master AS m
+JOIN bw AS b
+ON m.bonuswalletid = b.bonuswalletid 
+WHERE rn = 1 
+ORDER BY type ASC
