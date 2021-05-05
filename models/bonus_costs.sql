@@ -116,4 +116,17 @@ FROM master AS m
 JOIN bw AS b
 ON m.bonuswalletid = b.bonuswalletid 
 WHERE rn = 1 
-ORDER BY type ASC
+UNION ALL 
+SELECT userid, 
+  CAST(TRIM(RIGHT(note, 13)) AS INT64) AS bonuswalletid, 
+  'WR0' as bonus_status, 
+  amount * (-1) as amount, 
+  eurexchangerate,
+  amount * eurexchangerate * (-1) AS amounteur,
+  postingcompleted,
+  'both' as type
+FROM vip.Posting
+WHERE  postingtype = 'Bonus' 
+and note like 'ReleaseBonus%' 
+and paymenttype IS NULL 
+and payitemname = 'UBS'
