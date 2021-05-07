@@ -1,4 +1,27 @@
-WITH master AS (WITH s AS (WITH asd AS(SELECT CAST(TRIM(RIGHT(note, 13)) AS INT64) AS bonuswalletid,
+{% set partitions_to_replace = [
+  'current_date',
+  'date_sub(current_date, interval 1 day)'
+] %}
+
+
+{{ config(
+    materialized='incremental',
+    unique_key='bonuswalletid',
+    cluster_by = 'userid',
+    incremental_strategy = 'insert_overwrite', 
+    partition_by={
+      "field": "postingcompleted",
+      "data_type": "timestamp"
+    },
+    partitions = partitions_to_replace
+)}}
+
+
+
+
+
+WITH master AS
+(WITH master AS (WITH s AS (WITH asd AS(SELECT CAST(TRIM(RIGHT(note, 13)) AS INT64) AS bonuswalletid,
       CASE 
         WHEN LENGTH(TRIM(RIGHT(note, 13))) = 12
         THEN CAST(LEFT(TRIM(RIGHT(note, 13)), 7) AS INT64)
@@ -129,4 +152,11 @@ FROM vip.Posting
 WHERE  postingtype = 'Bonus' 
 and note like 'ReleaseBonus%' 
 and paymenttype IS NULL 
-and payitemname = 'UBS'
+and payitemname = 'UBS')
+SELECT * 
+FROM master 
+
+{% if is_incremental() %}
+        -- recalculate yesterday + today
+        where DATE(postingcompleted) in ({{ partitions_to_replace | join(',') }})
+    {% endif %}
