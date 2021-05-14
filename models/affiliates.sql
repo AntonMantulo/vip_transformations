@@ -147,7 +147,7 @@ bmw as(SELECT userid,SUM(amounteur) as bmw_eur,CAST(postingcompleted AS DATE) AS
               
 bc as (SELECT userid,SUM(amounteur) as bc_eur,CAST(postingcompleted AS DATE) AS postingcompleted
              FROM {{ref ('bonus_costs')}}
-             WHERE DATE(postingcompleted) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH) AND CURRENT_DATE()
+             WHERE DATE(postingcompleted) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH) AND CURRENT_DATE() and type='casino'
               GROUP BY userid,postingcompleted)
                                           
 SELECT rmb.userid, rmb.endtime AS date
