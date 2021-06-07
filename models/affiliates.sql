@@ -196,6 +196,8 @@ bc as (SELECT userid,SUM(amounteur) as bc_eur,CAST(postingcompleted AS DATE) AS 
               GROUP BY userid,postingcompleted) 
 SELECT joins.userid,
        joins.date,
+       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) AS bets_casino,
+       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) AS ggr_casino,
        IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) - IFNULL(bc_eur, 0) AS ngr_casino      
 FROM joins 
 FULL JOIN rmb
@@ -285,6 +287,8 @@ bc as (SELECT userid,SUM(amounteur) as bc_eur,CAST(postingcompleted AS DATE) AS 
               GROUP BY userid,postingcompleted) 
 SELECT joins.userid,
        joins.date,
+       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) AS bets_sport, 
+       IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) AS ggr_sport, 
        IFNULL(rmb_eur, 0) + IFNULL(bmb_eur, 0) - IFNULL(rmw_eur, 0) - IFNULL(bmw_eur, 0) - IFNULL(bc_eur, 0) AS ngr_sport      
 FROM joins 
 FULL JOIN rmb
@@ -313,8 +317,8 @@ SELECT master2.userid AS userid,
    secondary_aff, 
    registrationdate,
    deposit,
-   bets,
-   ggr,
+   IFNULL(bets_casino, 0) + IFNULL(bets_sport, 0) AS bets,
+   IFNULL(ggr_casino, 0) + IFNULL(ggr_sport, 0) AS ggr,
    IFNULL(ngr_sport,0)+IFNULL(ngr_casino,0) AS ngr,
    ngr_casino,
    ngr_sport,
