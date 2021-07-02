@@ -323,7 +323,11 @@ SELECT master2.userid AS userid,
    ngr_casino,
    ngr_sport,
    primary_commission,
-   secondary_commission
+   secondary_commission,
+   IFNULL(bets_casino, 0) AS bets_casino,
+   IFNULL(bets_sport, 0) AS bets_sport,
+   IFNULL(ggr_casino, 0) AS ggr_casino,
+   IFNULL(ggr_sport, 0) AS ggr_sport
 FROM master2
 FULL JOIN casino ON master2.userid=casino.userid AND master2.date=casino.date
 FULL JOIN sport ON master2.userid=sport.userid AND master2.date=sport.date
