@@ -115,7 +115,7 @@ SELECT userid,
    primary_commission,
    secondary_commission
 FROM master
-LEFT JOIN `dbt_vip.Affiliates cardinality`  AS t
+LEFT JOIN `dbt_amantulo.Affiliates cardinality`  AS t
 ON LEFT(master.affiliatecode, 7) = t.secondary_aff),
 
 casino AS(WITH joins AS (
@@ -258,10 +258,15 @@ UNION DISTINCT
 SELECT bc.userid, bc.postingcompleted AS date
 FROM bc),
 
-rmb AS (SELECT B.userid,CAST(W.endtime AS DATE) as endtime,SUM(B.amounteur) as rmb_eur
-              FROM vip.BetActivity as B JOIN vip.WinActivity as W ON B.postingid=W.matchingpostingid
-              WHERE DATE(W.endtime) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH) AND CURRENT_DATE() and W.wallettype="RealCash" and B.gamecode='OddsMatrix2'
-              GROUP BY userid,endtime),
+rmb AS (WITH d AS (SELECT b.userid, b.postingid, b.amounteur, MAX(w.endtime) as date
+FROM vip.BetActivity as B 
+JOIN vip.WinActivity as W 
+ON B.postingid=W.matchingpostingid 
+WHERE DATE(W.endtime) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH) AND CURRENT_DATE() and w.productname = 'OddsMatrix2' and W.wallettype="RealCash"
+GROUP BY 1, 2, 3)
+SELECT userid, CAST(date AS DATE) as endtime, SUM(amounteur) as rmb_eur
+FROM d
+GROUP BY 1, 2),
               
 bmb as(SELECT userid,SUM(amounteur) as bmb_eur,CAST(postingcompleted AS DATE) AS postingcompleted
              FROM {{ref ('bmb')}}
